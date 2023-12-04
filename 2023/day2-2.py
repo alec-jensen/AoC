@@ -1,6 +1,6 @@
 import re
 
-with open("daytwo.txt", "r") as f:
+with open("day2.txt", "r") as f:
     lines = [line.strip() for line in f.readlines()]
 
 total = 0

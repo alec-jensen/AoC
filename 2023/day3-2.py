@@ -1,4 +1,4 @@
-with open("./daythree.txt", "r") as f:
+with open("./day3.txt", "r") as f:
     data = [line.strip() + "." for line in f.readlines()]
 
 gear_ratios = []

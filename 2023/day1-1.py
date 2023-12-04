@@ -1,4 +1,4 @@
-with open("dayone.txt", "r") as f:
+with open("day1.txt", "r") as f:
     lines = f.readlines()
 
 nums = []
