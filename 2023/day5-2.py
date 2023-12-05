@@ -1,66 +1,94 @@
-# this code sucks and probably doesnt work but i dont care
-# cope harder
-# (untested)
+import sys
+from collections import defaultdict
+
 
 with open("./day5.txt", "r") as f:
     lines = [line.strip() for line in f.readlines()]
 
 seeds = [int(i) for i in lines[0].split(": ")[1].strip().split(" ")]
 
-# group seeds by 2
+mappings = []
 
-seeds = [seeds[i : i + 2] for i in range(0, len(seeds), 2)]
+new_mapping = False
+mapping = None
+for line in lines[1:]:
+    if not line:
+        new_mapping = True
+    elif new_mapping:
+        new_mapping = False
+        mappings.append([])
+    else:
+        [dest, source, range] = [int(x) for x in line.split(' ')]
+        mappings[-1].append((source, dest, range))
 
-print(seeds)
+for mapping in mappings:
+    mapping.sort()
 
-maps: dict[str, set[tuple[int, int, int]]] = {
-    "seed-to-soil map:": [],
-    "soil-to-fertilizer map:": [],
-    "fertilizer-to-water map:": [],
-    "water-to-light map:": [],
-    "light-to-temperature map:": [],
-    "temperature-to-humidity map:": [],
-    "humidity-to-location map:": [],
-}
 
-# im sorry for anyone who has to read this
+start = None
+ranges = []
+for i, seed_number in enumerate(seeds):
+    if i % 2 == 0:
+        start = seed_number
+    else:
+        ranges.append((start, start + seed_number - 1))
 
-lines = lines[2:]
 
-for i, key in enumerate(maps.keys()):
-    start = lines.index(key)
-    try:
-        end = lines.index("")
-    except ValueError:
-        end = len(lines)
+ranges.sort()
 
-    maps[key] = [
-        tuple([int(j) for j in line.split(" ")])
-        for line in lines[start + 1 : end]
-    ]
+for it, mapping in enumerate(mappings):
+    i = 0
+    j = 0
+    new_ranges = []
 
-    lines = lines[end + 1 :]
+    range = None
+    while ranges or range:
+        if not range:
+            range = ranges.pop(0)
 
-print(maps)
+        range_start = range[0]
+        range_end = range[1]
 
-lowest = float("inf")
+        if j >= len(mapping):
+            new_ranges.append((range_start, range_end))
+            range = None
+            i += 1
+            continue
 
-for seed1 in seeds:
-    for seed in range(seed1[0], seed1[0] + seed1[1] + 1):
-        mapping = [seed]
+        mapping_start = mapping[j][0]
+        mapping_end = mapping[j][0] + mapping[j][2] - 1
 
-        stop = False
+        mapping_shift = mapping[j][1] - mapping[j][0]
 
-        for map in maps:
-            for smap in maps[map]:
-                if smap[1] <= mapping[-1] <= smap[1] + smap[2]:
-                    mapping.append(mapping[-1] + smap[0] - smap[1])
-                    break
+        if range_start < mapping_start and range_end < mapping_start:
+            new_ranges.append((range_start, range_end))
+            range = None
+            i += 1
+        elif range_start >= mapping_start and range_end <= mapping_end:
+            new_ranges.append((range_start + mapping_shift, range_end + mapping_shift))
+            range = None
+            i += 1
+        elif range_start <= mapping_start and range_end <= mapping_end:
+            if range_start < mapping_start:
+                new_ranges.append((range_start, mapping_start - 1))
+            new_ranges.append((mapping_start + mapping_shift, range_end + mapping_shift))
+            range = None
+            i += 1
+        elif range_start <= mapping_start and range_end >= mapping_end:
+            if range_start < mapping_start:
+                new_ranges.append((range_start, mapping_start - 1))
+            new_ranges.append((mapping_start + mapping_shift, mapping_end + mapping_shift))
+            if range_end > mapping_end:
+                ranges = [(mapping_end + 1, range_end)] + ranges
+            range = None
+        elif range_start <= mapping_end and range_end > mapping_end:
+            new_ranges.append((range_start + mapping_shift, mapping_end + mapping_shift))
+            ranges = [(mapping_end + 1, range_end)] + ranges
+            range = None
+        else:
+            j += 1
 
-            else:
-                mapping.append(mapping[-1])
+    ranges = new_ranges
+    ranges.sort()
 
-        if mapping[-1] < lowest:
-            lowest = mapping[-1]
-
-print(f"Lowest: {lowest}")
+print(min(ranges)[0])
